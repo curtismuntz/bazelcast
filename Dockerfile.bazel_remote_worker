@@ -1,0 +1,18 @@
+FROM murtis/bazel
+MAINTAINER Curtis Muntz <cmuntz@outlook.com>
+
+RUN apt-get update && apt-get install git -y
+
+RUN mkdir bazel
+RUN git clone https://github.com/bazelbuild/bazel.git bazel
+RUN cd bazel && git checkout tags/0.6.1
+RUN apt-get remove git -y
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN cd bazel && bazel build src/tools/remote_worker:all
+RUN mkdir /app
+RUN cp -r /bazel/bazel-bin/src/tools/remote_worker/ /app/
+EXPOSE 8085
+ENV LISTEN_PORT 8085
+ENV HAZELCAST_SEVER localhost
+ENTRYPOINT /app/remote_worker/remote_worker --work_path=/tmp --listen_port=$LISTEN_PORT --debug true --hazelcast_node=$HAZELCAST_SEVER
